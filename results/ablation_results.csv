@@ -1,0 +1,14 @@
+ablation,variant,f1_macro,auc_roc,notes
+four_settings,zero-shot,0.5045,0.5356,No adaptation — randomly initialised head
+four_settings,one-shot,0.4562,0.4636,1 example/class — head-only fine-tuning
+four_settings,few-shot-10,0.7305,0.7972,10 examples/class — head-only fine-tuning
+four_settings,lora-r4,0.8066,0.908,LoRA r=4 — 147456 trainable params — 16.2 min
+four_settings,lora-r8,0.8195,0.9096,LoRA r=8 — 294912 trainable params — 16.3 min
+four_settings,lora-r16,0.8352,0.9199,LoRA r=16 — 589824 trainable params — 17.2 min
+lora_rank_sweep,r4,0.8066,0.908,0.17% of model params trainable
+lora_rank_sweep,r8,0.8195,0.9096,0.34% of model params trainable
+lora_rank_sweep,r16,0.8352,0.9199,0.68% of model params trainable
+retrieval_k_sweep,k3,,,mean_sim=0.9873 min_sim=0.9562
+retrieval_k_sweep,k5,,,mean_sim=0.9837 min_sim=0.9369 — dissertation default
+retrieval_k_sweep,k10,,,mean_sim=0.9764 min_sim=0.9078
+tess_generalisation,lora-r16-on-tess,0.2222,0.625,Zero-shot transfer — 14 TESS targets — single sector — LIMITED TRANSFER

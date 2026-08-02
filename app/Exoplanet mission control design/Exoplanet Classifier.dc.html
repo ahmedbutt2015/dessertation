@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&amp;family=Exo+2:wght@300;400;600&amp;display=swap" rel="stylesheet" />
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#020207;color:#e8f4ff;font-family:'Exo 2',sans-serif;overflow-x:hidden;}
+    ::-webkit-scrollbar{width:6px;}
+    ::-webkit-scrollbar-thumb{background:rgba(0,212,255,0.3);border-radius:3px;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    @keyframes fade-in{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes slide-up{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes pulse-btn{0%,100%{box-shadow:0 0 16px rgba(0,212,255,0.3);}50%{box-shadow:0 0 32px rgba(0,212,255,0.6);}}
+    @keyframes blink{0%,49%{opacity:1;}50%,100%{opacity:0;}}
+    @keyframes glow{0%,100%{opacity:0.4;}50%{opacity:1;}}
+  </style>
+</helmet>
+
+<!-- Starfield always present -->
+<canvas ref="{{ canvasRef }}" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
+
+<!-- ═══════════════════ LANDING ═══════════════════ -->
+<sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
+<div style="position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;">
+
+  <!-- Logo + title -->
+  <div style="display:flex;align-items:center;gap:20px;margin-bottom:40px;animation:fade-in 0.7s ease both;">
+    <div style="width:64px;height:64px;flex-shrink:0;border-radius:50%;background:conic-gradient(from 0deg,#00d4ff,#ffa500,#00d4ff);animation:spin 8s linear infinite;box-shadow:0 0 26px rgba(0,212,255,0.4);position:relative;">
+      <div style="position:absolute;inset:7px;border-radius:50%;background:#020207;"></div>
+    </div>
+    <div>
+      <h1 style="font-family:'Orbitron',sans-serif;font-size:clamp(16px,2.8vw,32px);font-weight:900;color:#fff;letter-spacing:0.02em;text-shadow:0 0 20px rgba(0,212,255,0.5);">EXOPLANET TRANSIT CLASSIFIER</h1>
+      <p style="font-size:11.5px;color:#8fb8d8;letter-spacing:0.08em;margin-top:5px;">ViT-B/16 &middot; LoRA r=16 &middot; FAISS RAG &middot; LangGraph &middot; COM748</p>
+    </div>
+  </div>
+
+  <!-- Tab switcher -->
+  <div style="display:flex;gap:0;margin-bottom:28px;background:rgba(8,16,36,0.85);border:1px solid rgba(0,212,255,0.2);border-radius:10px;padding:4px;animation:fade-in 0.7s 0.1s ease both;opacity:0;">
+    <button onClick="{{ onTabClassify }}" style="background:{{ tabClassifyBg }};border:none;color:{{ tabClassifyColor }};font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:0.08em;padding:10px 28px;border-radius:7px;cursor:pointer;transition:all 0.2s;">CLASSIFY SIGNAL</button>
+    <button onClick="{{ onTabSearch }}"   style="background:{{ tabSearchBg }};border:none;color:{{ tabSearchColor }};font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:0.08em;padding:10px 28px;border-radius:7px;cursor:pointer;transition:all 0.2s;">KNOWLEDGE BASE</button>
+  </div>
+
+  <!-- ── CLASSIFY TAB ── -->
+  <sc-if value="{{ isClassifyTab }}" hint-placeholder-val="{{ true }}">
+  <div style="width:100%;max-width:540px;animation:fade-in 0.4s ease both;">
+    <div style="background:rgba(8,16,36,0.92);border:1px solid rgba(0,212,255,0.32);border-radius:14px;padding:32px;box-shadow:0 0 46px rgba(0,212,255,0.1);">
+      <label style="display:block;font-size:10.5px;letter-spacing:0.11em;text-transform:uppercase;color:#8fb8d8;margin-bottom:10px;">Kepler Object of Interest ID</label>
+      <input value="{{ koiId }}" onChange="{{ onKoiChange }}" placeholder="e.g. K00069.01" style="width:100%;background:rgba(0,8,22,0.8);border:1px solid rgba(0,212,255,0.26);border-radius:8px;padding:14px 18px;color:#fff;font-family:'Exo 2',sans-serif;font-size:16px;outline:none;transition:border-color 0.2s,box-shadow 0.2s;" style-focus="border-color:#00d4ff;box-shadow:0 0 18px rgba(0,212,255,0.28);" />
+      <button onClick="{{ onAnalyze }}" style="margin-top:13px;width:100%;background:linear-gradient(135deg,#006e99,#004a6e);border:1px solid rgba(0,212,255,0.65);color:#fff;font-family:'Orbitron',sans-serif;font-size:13px;letter-spacing:0.1em;padding:15px;border-radius:8px;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;animation:pulse-btn 2.4s ease-in-out infinite;" style-hover="transform:translateY(-2px);box-shadow:0 6px 26px rgba(0,212,255,0.38);">ANALYSE SIGNAL</button>
+      <sc-if value="{{ hasError }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:12px;padding:10px 14px;background:rgba(255,70,70,0.08);border:1px solid rgba(255,70,70,0.28);border-radius:6px;color:#ff8080;font-size:13px;">{{ errorMsg }}</div>
+      </sc-if>
+      <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:#3a5570;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.1);border-radius:4px;padding:3px 9px;">K00069.01</span>
+        <span style="font-size:11px;color:#3a5570;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.1);border-radius:4px;padding:3px 9px;">K00007.01</span>
+        <span style="font-size:11px;color:#3a5570;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.1);border-radius:4px;padding:3px 9px;">K00017.01</span>
+        <span style="font-size:11px;color:#3a5570;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.1);border-radius:4px;padding:3px 9px;">K00005.01</span>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:28px;margin-top:40px;flex-wrap:wrap;">
+      <div style="text-align:center;">
+        <div style="font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;color:#00d4ff;">{{ statsDisplay.stars }}</div>
+        <div style="font-size:9.5px;color:#3a5570;text-transform:uppercase;letter-spacing:0.07em;margin-top:4px;">Stars Observed</div>
+      </div>
+      <div style="width:1px;height:32px;background:rgba(0,212,255,0.16);"></div>
+      <div style="text-align:center;">
+        <div style="font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;color:#ffa500;">{{ statsDisplay.candidates }}</div>
+        <div style="font-size:9.5px;color:#3a5570;text-transform:uppercase;letter-spacing:0.07em;margin-top:4px;">KOIs Flagged</div>
+      </div>
+      <div style="width:1px;height:32px;background:rgba(0,212,255,0.16);"></div>
+      <div style="text-align:center;">
+        <div style="font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;color:#fff;">{{ statsDisplay.confirmed }}</div>
+        <div style="font-size:9.5px;color:#3a5570;text-transform:uppercase;letter-spacing:0.07em;margin-top:4px;">Confirmed Planets</div>
+      </div>
+      <div style="width:1px;height:32px;background:rgba(0,212,255,0.16);"></div>
+      <div style="text-align:center;">
+        <div style="font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;color:#c9a0ff;">0.834</div>
+        <div style="font-size:9.5px;color:#3a5570;text-transform:uppercase;letter-spacing:0.07em;margin-top:4px;">F1 Score (LoRA r=16)</div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ── KNOWLEDGE BASE TAB ── -->
+  <sc-if value="{{ isSearchTab }}" hint-placeholder-val="{{ false }}">
+  <div style="width:100%;max-width:780px;animation:fade-in 0.4s ease both;">
+    <div style="background:rgba(8,16,36,0.92);border:1px solid rgba(0,212,255,0.32);border-radius:14px;padding:30px 32px;box-shadow:0 0 46px rgba(0,212,255,0.1);">
+      <div style="font-size:11px;color:#5c7d94;margin-bottom:16px;">Search the FAISS knowledge base of <strong style="color:#00d4ff;">2,745 confirmed Kepler planets</strong>. Enter any KOI ID to see its disposition and find the most similar confirmed systems.</div>
+      <div style="display:flex;gap:10px;">
+        <input value="{{ searchKoiId }}" onChange="{{ onSearchKoiChange }}" placeholder="e.g. K00001.01" style="flex:1;background:rgba(0,8,22,0.8);border:1px solid rgba(0,212,255,0.26);border-radius:8px;padding:12px 16px;color:#fff;font-family:'Exo 2',sans-serif;font-size:15px;outline:none;transition:border-color 0.2s,box-shadow 0.2s;" style-focus="border-color:#00d4ff;box-shadow:0 0 16px rgba(0,212,255,0.25);" />
+        <button onClick="{{ onSearch }}" style="background:rgba(0,100,140,0.6);border:1px solid rgba(0,212,255,0.5);color:#fff;font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:0.08em;padding:12px 22px;border-radius:8px;cursor:pointer;white-space:nowrap;transition:all 0.2s;" style-hover="background:rgba(0,130,180,0.7);">{{ searchBtnLabel }}</button>
+      </div>
+      <sc-if value="{{ hasSearchError }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:12px;padding:10px 14px;background:rgba(255,70,70,0.08);border:1px solid rgba(255,70,70,0.28);border-radius:6px;color:#ff8080;font-size:13px;">{{ searchError }}</div>
+      </sc-if>
+    </div>
+
+    <!-- Search results -->
+    <sc-if value="{{ hasSearchResult }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:20px;animation:fade-in 0.4s ease;">
+      <!-- KOI info card -->
+      <div style="background:rgba(8,16,36,0.9);border:1px solid {{ searchDispBorder }};border-radius:10px;padding:18px 24px;margin-bottom:18px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:180px;">
+          <div style="font-family:'Orbitron',sans-serif;font-size:18px;color:#fff;margin-bottom:4px;">{{ searchResult.koi_id }}</div>
+          <sc-if value="{{ searchHasName }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:12px;color:#8fb8d8;margin-bottom:8px;">{{ searchResult.kepler_name }}</div>
+          </sc-if>
+          <div style="display:inline-block;font-family:'Orbitron',sans-serif;font-size:11px;color:{{ searchDispColor }};background:{{ searchDispBg }};border:1px solid {{ searchDispBorder }};border-radius:16px;padding:4px 14px;">{{ searchResult.disposition }}</div>
+        </div>
+        <div style="display:flex;gap:24px;flex-wrap:wrap;">
+          <div style="text-align:center;">
+            <div style="font-size:9.5px;color:#3a5570;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px;">Period</div>
+            <div style="font-family:'Orbitron',sans-serif;font-size:14px;color:#00d4ff;">{{ searchResult.period }}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:9.5px;color:#3a5570;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px;">Radius</div>
+            <div style="font-family:'Orbitron',sans-serif;font-size:14px;color:#ffa500;">{{ searchResult.radius }}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:9.5px;color:#3a5570;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px;">Depth</div>
+            <div style="font-family:'Orbitron',sans-serif;font-size:14px;color:#fff;">{{ searchResult.depth }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Similar planets grid -->
+      <div style="font-size:11px;color:#3a5570;margin-bottom:12px;letter-spacing:0.04em;">{{ searchPlanetsLabel }}</div>
+      <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;">
+        <sc-for list="{{ searchPlanets }}" as="p" hint-placeholder-count="5">
+          <div style="background:rgba(8,16,36,0.9);border:1px solid rgba(0,212,255,0.18);border-radius:10px;padding:16px;min-width:185px;flex-shrink:0;transition:transform 0.18s,box-shadow 0.18s;" style-hover="transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,212,255,0.2);">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;">
+              <div style="width:22px;height:22px;border-radius:50%;background:{{ p.color }};box-shadow:0 0 9px {{ p.color }};flex-shrink:0;"></div>
+              <div style="font-family:'Orbitron',sans-serif;font-size:10.5px;color:#fff;line-height:1.3;">{{ p.name }}</div>
+            </div>
+            <div style="margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                <span style="font-size:9px;color:#3a5570;text-transform:uppercase;">Match</span>
+                <span style="font-size:9px;color:#00d4ff;font-family:'Orbitron',sans-serif;">{{ p.similarity }}%</span>
+              </div>
+              <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;">
+                <div style="height:100%;background:linear-gradient(90deg,#00d4ff,#ffa500);border-radius:2px;width:{{ p.barWidth }};"></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;font-size:10.5px;">
+              <div style="display:flex;justify-content:space-between;"><span style="color:#3a5570;">Period</span><span style="color:#c9dce8;">{{ p.period }}</span></div>
+              <div style="display:flex;justify-content:space-between;"><span style="color:#3a5570;">Radius</span><span style="color:#c9dce8;">{{ p.radius }}</span></div>
+              <div style="display:flex;justify-content:space-between;"><span style="color:#3a5570;">Depth</span><span style="color:#c9dce8;">{{ p.depth }}</span></div>
+              <div style="display:flex;justify-content:space-between;"><span style="color:#3a5570;">Star Temp</span><span style="color:#c9dce8;">{{ p.steff }}</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+</div>
+</sc-if>
+
+<!-- ═══════════════════ PIPELINE ═══════════════════ -->
+<sc-if value="{{ isPipeline }}" hint-placeholder-val="{{ false }}">
+<div style="position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
+  <div style="width:100%;max-width:490px;background:rgba(4,10,24,0.97);border:1px solid rgba(0,212,255,0.4);border-radius:16px;padding:40px;box-shadow:0 0 65px rgba(0,212,255,0.18);animation:slide-up 0.35s ease;">
+    <div style="font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:0.14em;color:#00d4ff;text-transform:uppercase;margin-bottom:6px;">Analysing Signal</div>
+    <div style="font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:34px;">{{ pipelineKoi }}</div>
+
+    <sc-for list="{{ pipelineSteps }}" as="step" hint-placeholder-count="5">
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:32px;">
+          <div style="width:32px;height:32px;border-radius:50%;border:2px solid {{ step.dotColor }};background:{{ step.dotBg }};display:flex;align-items:center;justify-content:center;font-size:13px;color:{{ step.dotColor }};font-family:'Orbitron',sans-serif;transition:all 0.3s;">{{ step.dotLabel }}</div>
+          <sc-if value="{{ step.hasConnector }}" hint-placeholder-val="{{ true }}">
+            <div style="width:2px;height:26px;background:{{ step.lineColor }};margin-top:3px;transition:background 0.4s;"></div>
+          </sc-if>
+        </div>
+        <div style="padding-top:5px;margin-bottom:4px;">
+          <div style="font-size:13.5px;font-weight:600;color:{{ step.labelColor }};transition:color 0.3s;">{{ step.label }}</div>
+          <div style="font-size:10.5px;color:#3a5570;margin-top:3px;">{{ step.sub }}</div>
+        </div>
+      </div>
+    </sc-for>
+
+    <div style="margin-top:26px;">
+      <div style="height:3px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;">
+        <div style="height:100%;background:linear-gradient(90deg,#00d4ff,#ffa500);border-radius:2px;transition:width 0.5s ease;width:{{ pipelineProgress }};"></div>
+      </div>
+      <div style="margin-top:9px;display:flex;justify-content:space-between;font-size:10.5px;color:#3a5570;">
+        <span>{{ pipelineStatusText }}</span>
+        <span style="font-family:'Orbitron',sans-serif;color:#00d4ff;">{{ pipelineProgress }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ═══════════════════ RESULTS ═══════════════════ -->
+<sc-if value="{{ isResults }}" hint-placeholder-val="{{ false }}">
+<div style="position:relative;z-index:1;min-height:100vh;animation:slide-up 0.45s ease;">
+
+  <!-- Sticky nav -->
+  <div style="position:sticky;top:0;z-index:10;background:rgba(2,2,7,0.96);backdrop-filter:blur(14px);border-bottom:1px solid rgba(0,212,255,0.16);padding:13px 26px;display:flex;align-items:center;gap:14px;">
+    <button onClick="{{ onBack }}" style="background:transparent;border:1px solid rgba(0,212,255,0.22);color:#8fb8d8;font-family:'Exo 2',sans-serif;font-size:13px;padding:7px 16px;border-radius:6px;cursor:pointer;transition:all 0.2s;white-space:nowrap;" style-hover="border-color:#00d4ff;color:#fff;background:rgba(0,212,255,0.06);">&#8592; Classify Another</button>
+    <div style="font-family:'Orbitron',sans-serif;font-size:14px;color:#9fd3ea;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ result.koi_id }}</div>
+    <div style="display:inline-flex;align-items:center;gap:9px;background:{{ result.badgeBg }};border:1px solid {{ result.badgeBorder }};border-radius:26px;padding:7px 20px;flex-shrink:0;">
+      <span style="font-size:16px;color:{{ result.statusColor }};">{{ result.icon }}</span>
+      <span style="font-family:'Orbitron',sans-serif;font-size:12px;color:{{ result.statusColor }};letter-spacing:0.06em;">{{ result.label }}</span>
+      <span style="font-family:'Orbitron',sans-serif;font-size:19px;font-weight:700;color:#fff;">{{ result.confidence }}%</span>
+    </div>
+  </div>
+
+  <div style="max-width:1200px;margin:0 auto;padding:26px 22px 60px;">
+
+    <!-- Orbital params -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:18px;">
+      <div style="background:rgba(8,16,36,0.88);border:1px solid rgba(0,212,255,0.18);border-radius:10px;padding:16px 20px;">
+        <div style="font-size:9px;color:#3a5570;text-transform:uppercase;letter-spacing:0.09em;margin-bottom:7px;">Orbital Period</div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:19px;color:#00d4ff;">{{ result.period }}</div>
+      </div>
+      <div style="background:rgba(8,16,36,0.88);border:1px solid rgba(255,165,0,0.18);border-radius:10px;padding:16px 20px;">
+        <div style="font-size:9px;color:#3a5570;text-transform:uppercase;letter-spacing:0.09em;margin-bottom:7px;">Planet Radius</div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:19px;color:#ffa500;">{{ result.radius }}</div>
+      </div>
+      <div style="background:rgba(8,16,36,0.88);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:16px 20px;">
+        <div style="font-size:9px;color:#3a5570;text-transform:uppercase;letter-spacing:0.09em;margin-bottom:7px;">Transit Depth</div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:19px;color:#fff;">{{ result.depth }}</div>
+      </div>
+    </div>
+
+    <!-- NASA vs AI -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:26px;">
+      <div style="background:rgba(8,16,36,0.88);border:1px solid rgba(0,212,255,0.13);border-radius:10px;padding:16px 20px;display:flex;align-items:center;gap:14px;">
+        <div style="font-size:28px;flex-shrink:0;">&#128640;</div>
+        <div>
+          <div style="font-size:9px;color:#3a5570;text-transform:uppercase;letter-spacing:0.09em;margin-bottom:6px;">NASA Disposition</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;color:{{ result.nasaColor }};">{{ result.nasa_disp }}</div>
+        </div>
+      </div>
+      <div style="background:rgba(8,16,36,0.88);border:1px solid rgba(0,212,255,0.13);border-radius:10px;padding:16px 20px;display:flex;align-items:center;gap:14px;">
+        <div style="font-size:28px;flex-shrink:0;">&#129504;</div>
+        <div>
+          <div style="font-size:9px;color:#3a5570;text-transform:uppercase;letter-spacing:0.09em;margin-bottom:6px;">AI Classification · ViT-B/16 + LoRA r=16</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;color:{{ result.aiColor }};">{{ result.label }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Similar planets -->
+    <div style="margin-bottom:26px;">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:14px;">
+        <h2 style="font-family:'Orbitron',sans-serif;font-size:13px;color:#fff;letter-spacing:0.05em;">Most Similar Confirmed Planets</h2>
+        <span style="font-size:10.5px;color:#3a5570;">2,745 indexed &middot; FAISS cosine similarity</span>
+      </div>
+      <div style="display:flex;gap:13px;overflow-x:auto;padding-bottom:10px;">
+        <sc-for list="{{ similarPlanets }}" as="p" hint-placeholder-count="5">
+          <div style="background:rgba(8,16,36,0.9);border:1px solid rgba(0,212,255,0.18);border-radius:10px;padding:17px 18px;min-width:190px;flex-shrink:0;transition:transform 0.18s,box-shadow 0.18s;" style-hover="transform:translateY(-4px);box-shadow:0 7px 20px rgba(0,212,255,0.2);">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;">
+              <div style="width:24px;height:24px;border-radius:50%;background:{{ p.color }};box-shadow:0 0 9px {{ p.color }};flex-shrink:0;"></div>
+              <div style="font-family:'Orbitron',sans-serif;font-size:10.5px;color:#fff;line-height:1.3;">{{ p.name }}</div>
+            </div>
+            <div style="margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                <span style="font-size:9px;color:#3a5570;text-transform:uppercase;">Match</span>
+                <span style="font-size:9px;color:#00d4ff;font-family:'Orbitron',sans-serif;">{{ p.similarity }}%</span>
+              </div>
+              <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;">
+                <div style="height:100%;background:linear-gradient(90deg,#00d4ff,#ffa500);border-radius:2px;width:{{ p.barWidth }};"></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;font-size:10.5px;">
+              <div style="display:flex;justify-content:space-between;"><span style="color:#3a5570;">Period</span><span style="color:#c9dce8;">{{ p.period }}</span></div>
+              <div style="display:flex;justify-content:space-between;"><span style="color:#3a5570;">Radius</span><span style="color:#c9dce8;">{{ p.radius }}</span></div>
+              <div style="display:flex;justify-content:space-between;"><span style="color:#3a5570;">Depth</span><span style="color:#c9dce8;">{{ p.depth }}</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- AI Explanation -->
+    <div style="background:rgba(4,10,24,0.94);border:1px solid rgba(0,212,255,0.26);border-radius:12px;padding:24px 28px;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:13px;">
+        <div style="width:6px;height:6px;border-radius:50%;background:#00d4ff;animation:glow 2s ease-in-out infinite;"></div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:0.12em;color:#00d4ff;text-transform:uppercase;">LangGraph Agent &mdash; Scientific Justification</div>
+      </div>
+      <p style="font-size:14px;line-height:1.85;color:#dce9f2;min-height:60px;">{{ typedText }}<sc-if value="{{ showCursor }}" hint-placeholder-val="{{ true }}"><span style="color:#00d4ff;animation:blink 1s step-end infinite;">|</span></sc-if></p>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,212,255,0.08);font-size:10px;color:#2a4055;">Grounded in NASA Exoplanet Archive data &middot; Not hallucination &middot; COM748 Dissertation · Ahmed Fayyaz Butt</div>
+    </div>
+
+    <!-- ── GLOSSARY ── -->
+    <div style="background:rgba(4,10,24,0.7);border:1px solid rgba(0,212,255,0.12);border-radius:12px;padding:24px 28px;">
+      <div style="font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:0.1em;color:#5c7d94;text-transform:uppercase;margin-bottom:20px;">Glossary &mdash; Key Terms</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0;">
+
+        <div style="padding:12px 14px;border-bottom:1px solid rgba(0,212,255,0.07);border-right:1px solid rgba(0,212,255,0.07);">
+          <div style="font-size:11.5px;font-weight:600;color:#00d4ff;margin-bottom:4px;">KOI — Kepler Object of Interest</div>
+          <div style="font-size:12px;color:#6a8faa;line-height:1.5;">A star flagged by the Kepler telescope as showing a brightness dip that could be caused by an orbiting planet. There are 9,564 KOIs; each has an ID like K00001.01.</div>
+        </div>
+
+        <div style="padding:12px 14px;border-bottom:1px solid rgba(0,212,255,0.07);">
+          <div style="font-size:11.5px;font-weight:600;color:#3ddc84;margin-bottom:4px;">CONFIRMED</div>
+          <div style="font-size:12px;color:#6a8faa;line-height:1.5;">NASA has verified this signal is a genuine exoplanet using multiple lines of evidence (radial velocity, transit timing, statistical validation). Cannot be explained by a false alarm.</div>
+        </div>
+
+        <div style="padding:12px 14px;border-bottom:1px solid rgba(0,212,255,0.07);border-right:1px solid rgba(0,212,255,0.07);">
+          <div style="font-size:11.5px;font-weight:600;color:#ff5c5c;margin-bottom:4px;">FALSE POSITIVE</div>
+          <div style="font-size:12px;color:#6a8faa;line-height:1.5;">The brightness dip is NOT a planet. Common causes: an eclipsing binary star behind the target, a background star with its own eclipse, or a systematic instrument artefact.</div>
+        </div>
+
+        <div style="padding:12px 14px;border-bottom:1px solid rgba(0,212,255,0.07);">
+          <div style="font-size:11.5px;font-weight:600;color:#00d4ff;margin-bottom:4px;">Orbital Period</div>
+          <div style="font-size:12px;color:#6a8faa;line-height:1.5;">How long it takes the planet to complete one full orbit around its host star, measured in days. Earth's period is 365 days. Hot Jupiters can orbit in under 2 days.</div>
+        </div>
+
+        <div style="padding:12px 14px;border-bottom:1px solid rgba(0,212,255,0.07);border-right:1px solid rgba(0,212,255,0.07);">
+          <div style="font-size:11.5px;font-weight:600;color:#ffa500;margin-bottom:4px;">Planet Radius (R⊕)</div>
+          <div style="font-size:12px;color:#6a8faa;line-height:1.5;">Size of the planet expressed as multiples of Earth's radius. R⊕ = 1 is Earth-sized. Values around 1–2 R⊕ are rocky planets; above ~4 R⊕ are gas giants.</div>
+        </div>
+
+        <div style="padding:12px 14px;border-bottom:1px solid rgba(0,212,255,0.07);">
+          <div style="font-size:11.5px;font-weight:600;color:#fff;margin-bottom:4px;">Transit Depth (ppm)</div>
+          <div style="font-size:12px;color:#6a8faa;line-height:1.5;">How much the star's brightness drops when the planet passes in front of it, in parts per million. Earth transiting the Sun causes ~84 ppm. Larger planets cause deeper dips.</div>
+        </div>
+
+        <div style="padding:12px 14px;border-bottom:1px solid rgba(0,212,255,0.07);border-right:1px solid rgba(0,212,255,0.07);">
+          <div style="font-size:11.5px;font-weight:600;color:#c9a0ff;margin-bottom:4px;">GAF — Gramian Angular Field</div>
+          <div style="font-size:12px;color:#6a8faa;line-height:1.5;">A technique to convert a 1D light curve into a 2D image by encoding the angular relationships between time-series values. This lets a vision model "see" the transit shape.</div>
+        </div>
+
+        <div style="padding:12px 14px;border-bottom:1px solid rgba(0,212,255,0.07);">
+          <div style="font-size:11.5px;font-weight:600;color:#c9a0ff;margin-bottom:4px;">ViT — Vision Transformer</div>
+          <div style="font-size:12px;color:#6a8faa;line-height:1.5;">A neural network architecture (ViT-B/16) that splits an image into 16×16 patches and learns relationships between them using attention. Originally designed for ImageNet; adapted here for GAF images.</div>
+        </div>
+
+        <div style="padding:12px 14px;border-right:1px solid rgba(0,212,255,0.07);">
+          <div style="font-size:11.5px;font-weight:600;color:#c9a0ff;margin-bottom:4px;">LoRA — Low-Rank Adaptation</div>
+          <div style="font-size:12px;color:#6a8faa;line-height:1.5;">A parameter-efficient fine-tuning method. Instead of retraining all 86M ViT weights, LoRA injects small trainable matrices (rank r=16, ~590K params — 0.68% of the model) into the frozen backbone.</div>
+        </div>
+
+        <div style="padding:12px 14px;">
+          <div style="font-size:11.5px;font-weight:600;color:#c9a0ff;margin-bottom:4px;">FAISS &amp; RAG</div>
+          <div style="font-size:12px;color:#6a8faa;line-height:1.5;">FAISS is a vector similarity search library. RAG (Retrieval-Augmented Generation) retrieves the 5 most similar confirmed planets from a knowledge base of 2,745 systems to ground the AI explanation in real data.</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+</sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      phase: 'landing',
+      landingTab: 'classify',
+      koiId: '',
+      pipelineStep: -1,
+      apiResult: null,
+      typedLength: 0,
+      stars: 0, candidates: 0, confirmed: 0,
+      errorMsg: '',
+      searchKoiId: '',
+      searchResult: null,
+      searchLoading: false,
+      searchError: '',
+    };
+    this.canvasRef = React.createRef();
+    this.pipelineStepDefs = [
+      { label: 'Ingesting Kepler light curve',    sub: 'NASA MAST photometric data' },
+      { label: 'Encoding Gramian Angular Field',  sub: '64×64 transit image generated' },
+      { label: 'ViT-B/16 + LoRA r=16 inference', sub: '589K trainable parameters active' },
+      { label: 'FAISS cosine similarity search',  sub: '2,745 confirmed planets indexed' },
+      { label: 'LangGraph agent synthesising',    sub: 'Grounded scientific justification' },
+    ];
+  }
+
+  componentDidMount() {
+    this.setupStarfield();
+    this.animateCounters();
+  }
+
+  componentWillUnmount() {
+    if (this.rafId) cancelAnimationFrame(this.rafId);
+    window.removeEventListener('resize', this._resize);
+    if (this.typeInterval) clearInterval(this.typeInterval);
+  }
+
+  setupStarfield() {
+    const canvas = this.canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    const resize = () => {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const n = Math.floor((canvas.width * canvas.height) / 2800);
+      stars = Array.from({ length: n }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.3 + 0.2,
+        a: Math.random() * 0.65 + 0.18,
+        sp: Math.random() * 0.013 + 0.003,
+        ph: Math.random() * Math.PI * 2,
+      }));
+    };
+    this._resize = resize;
+    resize();
+    window.addEventListener('resize', resize);
+    let t = 0;
+    const draw = () => {
+      t++;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const s of stars) {
+        const alpha = s.a + Math.sin(t * s.sp + s.ph) * 0.2;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,' + Math.max(0, Math.min(1, alpha)) + ')';
+        ctx.fill();
+      }
+      this.rafId = requestAnimationFrame(draw);
+    };
+    draw();
+  }
+
+  animateCounters() {
+    const targets = { stars: 200000, candidates: 5302, confirmed: 2745 };
+    const dur = 1800;
+    const start = performance.now();
+    const tick = (now) => {
+      const p = Math.min(1, (now - start) / dur);
+      const e = 1 - Math.pow(1 - p, 3);
+      this.setState({ stars: Math.floor(targets.stars * e), candidates: Math.floor(targets.candidates * e), confirmed: Math.floor(targets.confirmed * e) });
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  onTabClassify() { this.setState({ landingTab: 'classify' }); }
+  onTabSearch()   { this.setState({ landingTab: 'search' }); }
+
+  onKoiChange(e)       { this.setState({ koiId: e.target.value, errorMsg: '' }); }
+  onSearchKoiChange(e) { this.setState({ searchKoiId: e.target.value, searchError: '' }); }
+
+  async onSearch() {
+    const id = this.state.searchKoiId.trim();
+    if (!id) { this.setState({ searchError: 'Enter a KOI ID first' }); return; }
+    this.setState({ searchLoading: true, searchResult: null, searchError: '' });
+    try {
+      const res  = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ koi_id: id, k: 10 }) });
+      const data = await res.json();
+      if (data.error) { this.setState({ searchLoading: false, searchError: data.error }); return; }
+      this.setState({ searchLoading: false, searchResult: data });
+    } catch(e) {
+      this.setState({ searchLoading: false, searchError: 'Network error' });
+    }
+  }
+
+  async onAnalyze() {
+    const id = this.state.koiId.trim() || 'K00001.01';
+    this.setState({ phase: 'pipeline', pipelineStep: -1, errorMsg: '' });
+    const apiPromise = fetch('/api/classify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ koi_id: id }) }).then(r => r.json()).catch(e => ({ error: e.message }));
+    for (let i = 0; i < 5; i++) {
+      await new Promise(r => setTimeout(r, 520));
+      this.setState({ pipelineStep: i });
+    }
+    await new Promise(r => setTimeout(r, 360));
+    const data = await apiPromise;
+    if (data.error) { this.setState({ phase: 'landing', errorMsg: data.error }); return; }
+    this.setState({ phase: 'results', apiResult: data, typedLength: 0 });
+    if (this.typeInterval) clearInterval(this.typeInterval);
+    const full = data.explanation;
+    this.typeInterval = setInterval(() => {
+      this.setState(s => {
+        const next = Math.min(s.typedLength + 3, full.length);
+        if (next >= full.length) clearInterval(this.typeInterval);
+        return { typedLength: next };
+      });
+    }, 14);
+  }
+
+  onBack() {
+    if (this.typeInterval) clearInterval(this.typeInterval);
+    this.setState({ phase: 'landing', apiResult: null, typedLength: 0 });
+    this.animateCounters();
+  }
+
+  renderVals() {
+    const { phase, landingTab, koiId, pipelineStep, apiResult, typedLength, errorMsg, searchKoiId, searchResult, searchLoading, searchError } = this.state;
+
+    const STEP_STATUS = ['Ingesting light curve…','Generating GAF image…','Running ViT inference…','Retrieving similar planets…','Synthesising explanation…'];
+    const pipelineSteps = this.pipelineStepDefs.map((def, i) => {
+      const isDone = i < pipelineStep, isActive = i === pipelineStep;
+      return { ...def, isDone, isActive, dotLabel: isDone ? '✓' : isActive ? '⋯' : String(i+1), dotColor: isDone ? '#3ddc84' : isActive ? '#00d4ff' : 'rgba(255,255,255,0.14)', dotBg: isDone ? 'rgba(61,220,132,0.13)' : isActive ? 'rgba(0,212,255,0.09)' : 'transparent', labelColor: i <= pipelineStep ? '#fff' : '#3a5570', lineColor: isDone ? 'rgba(61,220,132,0.4)' : 'rgba(255,255,255,0.06)', hasConnector: i < 4 };
+    });
+    const pipelineProgress = Math.round(((pipelineStep+1)/5)*100) + '%';
+    const pipelineStatusText = pipelineStep >= 0 ? STEP_STATUS[pipelineStep] : 'Initialising…';
+
+    const EMPTY_R = { koi_id:'', period:'', radius:'', depth:'', confidence:0, label:'', nasa_disp:'', badgeBg:'transparent', badgeBorder:'transparent', statusColor:'#fff', icon:'', nasaColor:'#fff', aiColor:'#fff' };
+    let result = EMPTY_R, similarPlanets = [], typedText = '', showCursor = false;
+    if (apiResult) {
+      const isConf = apiResult.label === 'CONFIRMED';
+      result = { ...apiResult, statusColor: isConf?'#3ddc84':'#ff5c5c', badgeBg: isConf?'rgba(61,220,132,0.1)':'rgba(255,92,92,0.1)', badgeBorder: isConf?'rgba(61,220,132,0.38)':'rgba(255,92,92,0.38)', icon: isConf?'✓':'✗', nasaColor: apiResult.nasa_disp==='CONFIRMED'?'#3ddc84':'#ff5c5c', aiColor: isConf?'#3ddc84':'#ff5c5c' };
+      const C = ['#4fb8e8','#e8925a','#d4604a','#7ec8e3','#ffd166'];
+      similarPlanets = (apiResult.similar_planets||[]).map((p,i) => ({ ...p, color: C[i%C.length], barWidth: p.similarity+'%' }));
+      typedText  = apiResult.explanation.slice(0, typedLength);
+      showCursor = typedLength < apiResult.explanation.length;
+    }
+
+    const dispColors = { CONFIRMED: { color:'#3ddc84', bg:'rgba(61,220,132,0.1)', border:'rgba(61,220,132,0.35)' }, 'FALSE POSITIVE': { color:'#ff5c5c', bg:'rgba(255,92,92,0.1)', border:'rgba(255,92,92,0.35)' } };
+    const dc = dispColors[searchResult && searchResult.disposition] || { color:'#8fb8d8', bg:'rgba(0,212,255,0.08)', border:'rgba(0,212,255,0.25)' };
+    const C2 = ['#4fb8e8','#e8925a','#d4604a','#7ec8e3','#ffd166'];
+    const searchPlanets = searchResult ? (searchResult.results||[]).map((p,i) => ({ ...p, color: C2[i%C2.length], barWidth: p.similarity+'%' })) : [];
+
+    return {
+      canvasRef: this.canvasRef,
+      isLanding:  phase==='landing',
+      isPipeline: phase==='pipeline',
+      isResults:  phase==='results',
+      isClassifyTab: landingTab==='classify',
+      isSearchTab:   landingTab==='search',
+      tabClassifyBg:    landingTab==='classify' ? 'rgba(0,212,255,0.15)' : 'transparent',
+      tabClassifyColor: landingTab==='classify' ? '#ffffff' : '#5c7d94',
+      tabSearchBg:      landingTab==='search'   ? 'rgba(0,212,255,0.15)' : 'transparent',
+      tabSearchColor:   landingTab==='search'   ? '#ffffff' : '#5c7d94',
+      onTabClassify: () => this.onTabClassify(),
+      onTabSearch:   () => this.onTabSearch(),
+      koiId, onKoiChange: e => this.onKoiChange(e), onAnalyze: () => this.onAnalyze(), hasError: !!errorMsg, errorMsg,
+      statsDisplay: { stars: this.state.stars.toLocaleString('en-US'), candidates: this.state.candidates.toLocaleString('en-US'), confirmed: this.state.confirmed.toLocaleString('en-US') },
+      searchKoiId, onSearchKoiChange: e => this.onSearchKoiChange(e), onSearch: () => this.onSearch(),
+      searchBtnLabel: searchLoading ? 'SEARCHING…' : 'SEARCH',
+      hasSearchError: !!searchError, searchError,
+      hasSearchResult: !!searchResult,
+      searchResult: searchResult || { koi_id:'', kepler_name:'', disposition:'', period:'', radius:'', depth:'' },
+      searchHasName: !!(searchResult && searchResult.kepler_name && searchResult.kepler_name !== 'nan' && searchResult.kepler_name !== ''),
+      searchDispColor: dc.color, searchDispBg: dc.bg, searchDispBorder: dc.border,
+      searchPlanets,
+      searchPlanetsLabel: searchResult ? `${searchPlanets.length} most similar confirmed planets by cosine similarity:` : '',
+      pipelineKoi: koiId.trim()||'K00001.01', pipelineSteps, pipelineProgress, pipelineStatusText,
+      result, similarPlanets, typedText, showCursor,
+      onBack: () => this.onBack(),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

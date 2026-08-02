@@ -1,0 +1,16 @@
+koi,true_label,predicted_label,correct,confidence,scenario,tmpl_grounding,tmpl_completeness,tmpl_hallucinations,llm_grounding,llm_completeness,llm_hallucinations,llm_path
+K00001.01,CONFIRMED,CONFIRMED,True,0.94,correct,5,5,5,5,5,1,llm
+K00002.01,CONFIRMED,CONFIRMED,True,0.91,correct,5,5,2,5,5,0,llm
+K00041.01,CONFIRMED,CONFIRMED,True,0.87,correct,5,5,5,5,5,0,llm
+K00069.01,CONFIRMED,CONFIRMED,True,0.83,correct,5,5,4,5,5,0,llm
+K00085.01,CONFIRMED,CONFIRMED,True,0.88,correct,5,5,5,5,5,0,llm
+K00018.01,FALSE POSITIVE,FALSE POSITIVE,True,0.9,correct,5,5,0,5,5,0,llm
+K00019.01,FALSE POSITIVE,FALSE POSITIVE,True,0.85,correct,5,5,0,5,5,0,llm
+K00024.01,FALSE POSITIVE,FALSE POSITIVE,True,0.82,correct,5,5,0,5,5,1,llm
+K00028.01,FALSE POSITIVE,FALSE POSITIVE,True,0.79,correct,5,5,1,5,5,0,llm
+K00013.01,FALSE POSITIVE,FALSE POSITIVE,True,0.88,correct,5,5,1,5,5,0,llm
+K00115.01,CONFIRMED,FALSE POSITIVE,False,0.62,wrong,5,5,0,5,5,0,llm
+K00262.01,CONFIRMED,FALSE POSITIVE,False,0.59,wrong,5,5,1,5,5,1,llm
+K00005.01,FALSE POSITIVE,CONFIRMED,False,0.64,wrong,5,5,5,5,5,0,llm
+K00006.01,FALSE POSITIVE,CONFIRMED,False,0.61,wrong,5,5,2,5,5,0,llm
+K00007.01,FALSE POSITIVE,CONFIRMED,False,0.58,wrong,5,5,5,5,5,0,llm

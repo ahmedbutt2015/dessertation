@@ -1,0 +1,4 @@
+class,precision,recall,f1,support
+FALSE POSITIVE,0.8891,0.8262,0.8565,466
+CONFIRMED,0.7769,0.8545,0.8139,330
+macro avg,0.833,0.8404,0.8352,796

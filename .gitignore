@@ -1,0 +1,28 @@
+# Large data files — not committed (too large for GitHub)
+data/
+*.npz
+*.zip
+*.fits
+
+# Secrets
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# macOS
+.DS_Store
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Sample / third-party docs (other student's work)
+sample/
+
+# Virtual environments
+.venv/
+venv/
+env/
